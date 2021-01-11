@@ -1,3 +1,7 @@
+let lookupTable = {};
+let network;
+
+
 // create an array with nodes
 function drawGraph(nodes, edgesData) {
 
@@ -45,7 +49,7 @@ function drawGraph(nodes, edgesData) {
 
     }
   };
-  var network = new vis.Network(container, data, options)
+  network = new vis.Network(container, data, options)
 }
 
 
@@ -63,19 +67,20 @@ async function method2() {
 
 //### getNodes()(function) from "jsonObject" passed from CSV of spreadsheet
 //### Map the id and label as "index" and "artform"
+     // console.log(jsonObject);
     let nodeNamesArray = getNodes(jsonObject);
     let nodes = nodeNamesArray.map((artform, index) => {
       return {
         id: index,
-        label: artform
-      
+        label: artform.Artform,        
+        group:artform.Primary_Sense
       }
     })
 // ### lookupTable = retrive the information from this node array
-    let lookupTable = {};
+    lookupTable = {};
     for (let i = 0; i < nodeNamesArray.length; i++) {
-      let nodeName = nodeNamesArray[i];
-      lookupTable[nodeName] = i;
+      let node = nodeNamesArray[i];
+      lookupTable[node.Artform.toLowerCase()] = i;
     }
  // ####DRAW THE EDGES = for each artform within jsonObject, take the "Related_Artforms" column, split it using commas and push it individually(...)into edges(edges.push)
     let edges = [];
@@ -85,8 +90,8 @@ async function method2() {
       .filter(s => s != "")
       .map(related => {
         return {
-          "from": lookupTable[artform.Artform],
-          "to": lookupTable[related]
+          "from": lookupTable[artform.Artform.toLowerCase()],
+          "to": lookupTable[related.toLowerCase()]
         }
       })
     edges.push(...related);
@@ -101,45 +106,19 @@ async function method2() {
 }
 //####### FUNCTION that uses Set() which remove repeated items in the "Artform" column.
 function getNodes(artforms) {
-  let artformArray = artforms.map(a => a.Artform);
+let artformArray = artforms.map(a => { return {Artform: a.Artform, Primary_Sense: a.Primary_Sense }});
   // Set will automatically discard repeated values
   return [...new Set(artformArray)]
 
+
 }
 
-function colorConvert(artforms) {
+document.querySelector('#search-btn').addEventListener('click', ()=>{
 
-    let V = "#FF6560"; //10000 Vision
-    H = "#42a5f5";  //01000 Hearing
-    To = "#ffee58 "; //00100 Touch
-    Ta = "#bdbdbd"; //00010 Taste
-    S = "#b39ddb"; //00001 Smell 
-    VH = "#ba68c8"; //11000 Vision, Hearing
-    VTo = "#23E1A4"; //10100 Vision,Touch
-    VTa = "#bf360c";//10010 Vision,Taste
-    VS = "#bf360c"; //10001 Vision,Smell
-    HTo = "#69f0ae "; // 01100 Hearing,Touch
-    HTa = "#e6ee9c"; // 01010 Hearing,Taste
-    HS = "#e6ee9c"; //01001 Hearing,Smell
-    ToTa = "#7BB128"; //00110 Touch,Taste
-    ToS = "#e6ee9c"; //00101 Touch,Smell
-    TaS = "#e6ee9c"; //00011 Taste,Smell
-    VHTo = "#1BE381"; //11100 Vision,Hearing,Touch
-    VHTa = "#1E7EB6"; //11010 Vision,Hearing,Taste
-    VHS = "#1E37B6"; //11001 Vision,Hearing,Smell
-    VToTa = "#e6ee9c"; //10110 Vision,Touch,Taste
-    VToS = "#e6ee9c"; //10101 Vision,Touch,Smell
-    VTaS = "#e6ee9c"; //10011 Vision,Taste,Smell
-    HToTa = "#e6ee9c";//01110 Hearing,Touch, Taste
-    HToS = "#e6ee9c";//01011 Hearing,Touch,Smell
-    HTaS = "#e6ee9c";//01011 Hearing,Taste,Smell
-    ToTaS = "#e6ee9c";//00111 Touch,Taste,Smell 
-    VHToTa = "#e6ee9c";//11110 Vision,Hearing,Touch,Taste
-    VHToS = "#B6711E";//11101 Vision,Hearing,Touch,Smell
-    VHTaS = "#00FFB0";//11011 Vision,Hearing,Taste,Smell
-    VToTaS = "#0095FF";//10111 Vision,Touch,Taste,Smell
-    HToTaS = "#FF00AD";//01111 Hearing,Touch,Taste,Smell 
-    VHToTaS = "#FF9600";//11111 Vision,Hearing,Touch,Taste,Smell
-}
+ let nodeId = lookupTable[document.querySelector('#search-terms').value.toLowerCase()];
+ network.focus(nodeId, {animation: true, scale:2});
+ network.selectNodes([nodeId]);
+
+})
 
 method2();
