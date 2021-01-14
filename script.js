@@ -19,6 +19,8 @@ function drawGraph(nodes, edgesData) {
     edges: edges,
   };
   var options = {  
+    
+
     edges:{
       smooth: { type: "continuous" } 
     },
@@ -52,16 +54,27 @@ function drawGraph(nodes, edgesData) {
   };
   network = new vis.Network(container, data, options)
   //#### get nodes that was clicked, create the box for node info and the bullet points for the related artforms.
-   network.on("click", function (params) {
+   network.on("selectNode", function (params) {
     let divElement = document.createElement('div');
+    let relatedTo = document.createElement('div');
     let unorderedList = document.createElement('ul');
+    let relatedBy = document.createElement('div');
     let nodeId = params.nodes[0];
-
+  //#### take the node id from click, reverse lookup for the name, and then HTML write onto a html <div> using `(the one beside ~) and the ${} means javascript
     divElement.innerHTML = `<div>
       <h1 style="color:white;">${reverseLookup[nodeId]}</h1>
     </div>
     `;
-
+    //#### to add a "related to" text into the information box
+    relatedTo.innerHTML = `<div>
+      <h4 style="color:white;">Related To: </h4>
+    </div>
+    `;
+    relatedBy.innerHTML = `<div>
+      <h4 style="color:white;">Related By: </h4>
+    </div>
+    `;
+  //#### pass the adjacent into the "#output" column at the information box on the right
     let adjacents = adjacentMatrix[nodeId];
     let output = "";
     if (Array.isArray(adjacents)) {
@@ -69,11 +82,14 @@ function drawGraph(nodes, edgesData) {
       // console.log(reverseLookup[a]);
       // output += reverseLookup[a] + "1\n";
       unorderedList.innerHTML += "<li>" + reverseLookup[a] + "</li>"
-    }
+    } 
+    
     // clear everything inside the #output div
     document.querySelector("#output").innerHTML = "";
     document.querySelector("#output").appendChild(divElement);
+    document.querySelector("#output").appendChild(relatedTo);
     document.querySelector("#output").appendChild(unorderedList);
+    document.querySelector("#output").appendChild(relatedBy);
     } else {
       console.error("Unable to gt adacjents for nodeId = " + nodeId)
     }
@@ -133,18 +149,18 @@ async function method2() {
   }
   console.log(edges);
 
-  // create parentsToChildren
+  //### create adjacents matrix.
 for (let j of jsonObject)  {
-    // id of the current node represented by the j
+    //#### id of the current node represented by the j, split, trim spaces, remove null and lowercase all
      let nodeId = lookupTable[j.Artform.toLowerCase()];  
-     let related = j.Related_Artforms.split(",")
+     let relatedTo = j.Related_Artforms.split(",")
       .map(s => s.trim())
       .filter(s => s != "")
-      .map(related => {
-        return lookupTable[related.toLowerCase()] || -1;
+      .map(relatedTo => {
+        return lookupTable[relatedTo.toLowerCase()] || -1;
       })
      // filter all the 0s
-     let adjacents = [...related].filter(f => f != -1);
+     let adjacents = [...relatedTo].filter(f => f != -1);
     adjacentMatrix[nodeId] = adjacents;
 
   } 
