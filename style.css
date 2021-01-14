@@ -1,5 +1,19 @@
 #mynetwork {
-        width: 900px;
+        /* width: 600px; */
+        flex-basis: 100%;
+        flex: 4;
         height: 600px;
         border: 1px solid lightgray;
+
     }
+
+#output {
+  color: white;
+  border: 1px solid white;
+  flex-basis: 100%;
+  flex: 1;
+}
+
+#container {
+  display:flex;
+}

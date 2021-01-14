@@ -1,4 +1,6 @@
-let lookupTable = {};
+let lookupTable = {}; //lookup the new table.
+let reverseLookup = {}; // map ID to artForm name
+let adjacentMatrix = {};// to find nodes related to and from this nodes
 let network;
 
 
@@ -38,7 +40,6 @@ function drawGraph(nodes, edgesData) {
     physics:{
           enabled: true,
           barnesHut: {
-            theta: 0.1,
             gravitationalConstant: -8000,
             centralGravity: 0.5,
             springLength: 150,
@@ -50,6 +51,37 @@ function drawGraph(nodes, edgesData) {
     }
   };
   network = new vis.Network(container, data, options)
+  //#### get nodes that was clicked, create the box for node info and the bullet points for the related artforms.
+   network.on("click", function (params) {
+    let divElement = document.createElement('div');
+    let unorderedList = document.createElement('ul');
+    let nodeId = params.nodes[0];
+
+    divElement.innerHTML = `<div>
+      <h1 style="color:white;">${reverseLookup[nodeId]}</h1>
+    </div>
+    `;
+
+    let adjacents = adjacentMatrix[nodeId];
+    let output = "";
+    if (Array.isArray(adjacents)) {
+      for (let a of adjacents) {
+      // console.log(reverseLookup[a]);
+      // output += reverseLookup[a] + "1\n";
+      unorderedList.innerHTML += "<li>" + reverseLookup[a] + "</li>"
+    }
+    // clear everything inside the #output div
+    document.querySelector("#output").innerHTML = "";
+    document.querySelector("#output").appendChild(divElement);
+    document.querySelector("#output").appendChild(unorderedList);
+    } else {
+      console.error("Unable to gt adacjents for nodeId = " + nodeId)
+    }
+    
+        
+  });
+
+
 }
 
 
@@ -78,9 +110,11 @@ async function method2() {
     })
 // ### lookupTable = retrive the information from this node array
     lookupTable = {};
+    reverseLookup = {};
     for (let i = 0; i < nodeNamesArray.length; i++) {
       let node = nodeNamesArray[i];
       lookupTable[node.Artform.toLowerCase()] = i;
+      reverseLookup[i] = node.Artform;
     }
  // ####DRAW THE EDGES = for each artform within jsonObject, take the "Related_Artforms" column, split it using commas and push it individually(...)into edges(edges.push)
     let edges = [];
@@ -98,6 +132,23 @@ async function method2() {
 
   }
   console.log(edges);
+
+  // create parentsToChildren
+for (let j of jsonObject)  {
+    // id of the current node represented by the j
+     let nodeId = lookupTable[j.Artform.toLowerCase()];  
+     let related = j.Related_Artforms.split(",")
+      .map(s => s.trim())
+      .filter(s => s != "")
+      .map(related => {
+        return lookupTable[related.toLowerCase()] || -1;
+      })
+     // filter all the 0s
+     let adjacents = [...related].filter(f => f != -1);
+    adjacentMatrix[nodeId] = adjacents;
+
+  } 
+
   // only draw the graph wnen data has been processed
   drawGraph(nodes, edges);
 
@@ -112,11 +163,12 @@ let artformArray = artforms.map(a => { return {Artform: a.Artform, Primary_Sense
 
 
 }
-
+//#### search, look up the table after new Set(remove duplicate)
+//#### assign all text to lower case, search, zoom in with animation to that node.
 document.querySelector('#search-btn').addEventListener('click', ()=>{
 
  let nodeId = lookupTable[document.querySelector('#search-terms').value.toLowerCase()];
- network.focus(nodeId, {animation: true, scale:2});
+ network.focus(nodeId, {animation: true, scale:0.7});
  network.selectNodes([nodeId]);
 
 })
