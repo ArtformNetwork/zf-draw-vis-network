@@ -1,6 +1,8 @@
 let lookupTable = {}; //lookup the new table.
 let reverseLookup = {}; // map ID to artForm name
 let adjacentMatrix = {};// to find nodes related to and from this nodes
+let lookupTable2 = {};
+let byMatrix = {};
 let network;
 
 
@@ -19,7 +21,9 @@ function drawGraph(nodes, edgesData) {
     edges: edges,
   };
   var options = {  
-    
+    interaction:{
+      hover: true,
+    },
 
     edges:{
       smooth: { type: "continuous" } 
@@ -42,12 +46,12 @@ function drawGraph(nodes, edgesData) {
     physics:{
           enabled: true,
           barnesHut: {
-            gravitationalConstant: -8000,
-            centralGravity: 0.5,
-            springLength: 150,
+            gravitationalConstant: -9000,
+            centralGravity: 0.3,
+            springLength: 160,
             springConstant: 0.01,
             damping: 0.09,
-            avoidOverlap: 0.5
+            avoidOverlap: 0.75
           },
 
     }
@@ -56,13 +60,18 @@ function drawGraph(nodes, edgesData) {
   //#### get nodes that was clicked, create the box for node info and the bullet points for the related artforms.
    network.on("selectNode", function (params) {
     let divElement = document.createElement('div');
+    let commonSenses = document.createElement('div');
     let relatedTo = document.createElement('div');
     let unorderedList = document.createElement('ul');
     let relatedBy = document.createElement('div');
     let nodeId = params.nodes[0];
   //#### take the node id from click, reverse lookup for the name, and then HTML write onto a html <div> using `(the one beside ~) and the ${} means javascript
     divElement.innerHTML = `<div>
-      <h1 style="color:white;">${reverseLookup[nodeId]}</h1>
+      <h1 style="color:white; text-align: center;">${reverseLookup[nodeId]}</h1>
+    </div>
+    `;
+    commonSenses.innerHTML = `<div>
+      <h4 style="color:white;">Common Senses: </h4>
     </div>
     `;
     //#### to add a "related to" text into the information box
@@ -87,6 +96,7 @@ function drawGraph(nodes, edgesData) {
     // clear everything inside the #output div
     document.querySelector("#output").innerHTML = "";
     document.querySelector("#output").appendChild(divElement);
+    document.querySelector("#output").appendChild(commonSenses);
     document.querySelector("#output").appendChild(relatedTo);
     document.querySelector("#output").appendChild(unorderedList);
     document.querySelector("#output").appendChild(relatedBy);
@@ -100,7 +110,12 @@ function drawGraph(nodes, edgesData) {
 
 }
 
-
+var changeChosenNodeSize = function (values, id, selected, hovering) {
+  values.size = 60;
+};
+var changeChosenLabelSize = function (values, id, selected, hovering) {
+  values.size +=1.5;
+};
 
 async function method2() {
   let url = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQEiiCJ_MQKk2BVzvTEyeo7LMN19CNuf1kpr5RGosDhL1zsvn54epmqSuXKtKQuMsi5p3t8pHx9B14p/pub?gid=340655955&single=true&output=csv';
@@ -121,12 +136,14 @@ async function method2() {
       return {
         id: index,
         label: artform.Artform,        
-        group:artform.Primary_Sense
+        group:artform.Primary_Sense,
+        chosen: { label: changeChosenLabelSize, node: changeChosenNodeSize },
       }
     })
 // ### lookupTable = retrive the information from this node array
     lookupTable = {};
     reverseLookup = {};
+    lookupTable2 = {};
     for (let i = 0; i < nodeNamesArray.length; i++) {
       let node = nodeNamesArray[i];
       lookupTable[node.Artform.toLowerCase()] = i;
@@ -164,6 +181,54 @@ for (let j of jsonObject)  {
     adjacentMatrix[nodeId] = adjacents;
 
   } 
+console.log(adjacentMatrix);
+
+//################### TESTING HERE
+for (let j of jsonObject)  {
+    //#### id of the current node represented by the j, split, trim spaces, remove null and lowercase all
+    let newRelatedBy =[];
+     let nodeId = lookupTable[j.Artform.toLowerCase()];  
+
+     let relatedTo = j.Related_Artforms.split(",") //remove all ,
+      .map(s => s.trim()) //remove spaces
+      .filter(s => s != "") // remove null
+      .map(relatedTo => { //convert the artform name to ID
+        let originNode = lookupTable[relatedTo.toLowerCase()]  ||0;
+        let relatedBy = nodeId;
+        
+      //  return newRelatedBy;
+       //nodeId2[relatedBy] = nodeId2[relatedBy].push(nodeId);
+      })
+      
+      //console.log(relatedTo);
+      
+
+     // console.log(nodeId);
+     // filter all the 0s
+     let byAdjacents = [...relatedTo].filter(f => f != -1);
+    byMatrix[nodeId] = byAdjacents;
+
+  } 
+//console.log(byMatrix);
+  /*
+//###create related by matrix
+for (let r of jsonObject)  {
+    //#### id of the current node represented by the j, split, trim spaces, remove null and lowercase all
+     let nodeId = lookupTable[r.Artform.toLowerCase()];  
+     let relatedBy = r.Related_Artforms.split(",")
+      .map(s => s.trim())
+      .filter(s => s != "")
+      .map(relatedBy => {
+        if (relatedBy.toLowerCase() == nodeId){
+        return lookupTable[r.Artform.toLowerCase()] || -1;
+        }
+      })
+     // filter all the 0s
+     let byAdjacent = [...relatedBy].filter(f => f != -1);
+    byMatrix[nodeId] = byAdjacent;
+    console.log(byMatrix);
+  }
+*/
 
   // only draw the graph wnen data has been processed
   drawGraph(nodes, edges);
@@ -179,6 +244,41 @@ let artformArray = artforms.map(a => { return {Artform: a.Artform, Primary_Sense
 
 
 }
+
+function convertSenses(){
+    V = "Vision";
+    H = "Hearing";
+    To = "Touch";
+    Ta = "Taste";
+    S = "Smell";
+    VH = "Vision, Hearing";
+    VTo = "Vision,Touch";
+    VTa = "Vision,Taste";
+    VS = "Vision,Smell";
+    HTo = "Hearing,Touch";
+    HTa = "Hearing,Taste";
+    HS = "Hearing,Smell";
+    ToTa = "Touch,Taste";
+    ToS = "Touch,Smell";
+    TaS = "Taste,Smell";
+    VHTo = "Vision,Hearing,Touch";
+    VHTa = "Vision,Hearing,Taste";
+    VHS = "Vision,Hearing,Smell";
+    VToTa = "Vision,Touch,Taste";
+    VToS = "Vision,Touch,Smell";
+    VTaS = "Vision,Taste,Smell";
+    HToTa = "Hearing,Touch, Taste";
+    HToS = "Hearing,Touch,Smell";
+    HTaS = "Hearing,Taste,Smell";
+    ToTaS = "Touch,Taste,Smell";
+    VHToTa = "Vision,Hearing,Touch,Taste";
+    VHToS = "Vision,Hearing,Touch,Smell";
+    VHTaS = "Vision,Hearing,Taste,Smell";
+    VToTaS = "Vision,Touch,Taste,Smell";
+    HToTaS = "Hearing,Touch,Taste,Smell";
+    VHToTaS = "Vision,Hearing,Touch,Taste,Smell"; 
+}
+
 //#### search, look up the table after new Set(remove duplicate)
 //#### assign all text to lower case, search, zoom in with animation to that node.
 document.querySelector('#search-btn').addEventListener('click', ()=>{
