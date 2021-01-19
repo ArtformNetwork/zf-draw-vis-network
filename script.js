@@ -8,7 +8,7 @@ let network;
 
 // create an array with nodes
 function drawGraph(nodes, edgesData) {
-
+//sdfsfsdf
   // create an array with edges
   var edges = new vis.DataSet([
     ...edgesData
